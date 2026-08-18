@@ -1,0 +1,16 @@
+node_modules/
+lib/
+*.tsbuildinfo
+.DS_Store
+.env
+*.tgz
+
+# 内部资产：仅本地保留，永不入库（文档 / 开发态 overlay / 脚本 / 测试）
+/AGENTS.md
+/CLAUDE.md
+/DEVELOPMENT.md
+/DESIGN.md
+/cordis.dev.yml
+/scripts/
+/tests/
+/vitest.config.ts

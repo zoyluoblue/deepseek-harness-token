@@ -1,0 +1,522 @@
+/*
+ * Layout budget, derived from the settings dialog's own CSS:
+ *   .panel 800px − .nav 188px − .options padding 48px      = 564px
+ *   minus the 8px classic scrollbar while .options scrolls = 556px
+ *   and .panel is max-width: calc(100vw − 48px), so a 800px-wide window
+ *   leaves only ~508px.
+ * Nothing here may therefore assume a fixed width — the heatmap is a fluid
+ * grid, and wide content gets its own horizontal scroller.
+ *
+ * The tab body is NOT its own scroll container: the dialog's `.options` is the
+ * only overflow-y:auto in the chain, so growing taller scrolls the whole
+ * Plugins page. Sticky positioning is relative to that ancestor.
+ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
+  max-width: 760px;
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+}
+
+/* Type scale copied from the shipped settings pages so a third-party section
+   does not announce itself by having a different heading size. */
+.heading {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.intro {
+  margin: 0 0 -4px;
+  font-size: 13px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+/* ---- toolbar ---------------------------------------------------------- */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.segmented {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-layer-2);
+}
+
+.segment {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  line-height: 20px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.segment:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.segment[aria-selected='true'],
+.segment[aria-checked='true'] {
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-primary);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
+}
+
+.segment:focus-visible {
+  outline: 2px solid var(--dsw-alias-brand-primary);
+  outline-offset: 1px;
+}
+
+/* ---- stat grid -------------------------------------------------------- */
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.statCard {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  background: var(--dsw-alias-bg-layer-2);
+}
+
+.statLabel {
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.statValue {
+  color: var(--dsw-alias-label-primary);
+  font-size: 20px;
+  line-height: 26px;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statHint {
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+  line-height: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- heatmap ---------------------------------------------------------- */
+
+.heatmap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Positioning context for the shared tooltip. */
+.heatmapWrap {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+/*
+ * One tooltip for the whole grid, anchored from the hovered cell's rect.
+ * `pointer-events: none` matters: the tooltip sits directly above the cell,
+ * and without it the pointer would enter the tooltip, fire mouseleave on the
+ * grid, and make it flicker.
+ */
+.tooltip {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: var(--dsw-alias-tooltip-bg, var(--dsw-alias-bg-layer-1));
+  border: 1px solid var(--dsw-alias-border-l2);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 18%);
+  white-space: nowrap;
+  animation: tooltipIn 120ms ease-out;
+}
+
+/* The caret, pointing back down at the cell. */
+.tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -4px;
+  border: 4px solid transparent;
+  border-top-color: var(--dsw-alias-border-l2);
+}
+
+.tooltipDetail {
+  color: var(--dsw-alias-label-primary);
+  font-size: 12px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tooltipDay {
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+  line-height: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes tooltipIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tooltip {
+    animation: none;
+  }
+}
+
+.heatmapGrid {
+  display: grid;
+  grid-template-rows: repeat(7, minmax(0, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 2px;
+  width: 100%;
+}
+
+/* Bounded ranges: one row of days. A fixed height rather than an aspect ratio,
+   because seven cells across the full width would otherwise render as huge
+   blocks while thirty would render as slivers. */
+.heatmapStrip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 3px;
+  width: 100%;
+  max-width: 420px;
+  height: 44px;
+}
+
+.heatmapStrip .cell {
+  aspect-ratio: auto;
+  height: 100%;
+  border-radius: 3px;
+}
+
+.cell {
+  aspect-ratio: 1 / 1;
+  border-radius: 2px;
+  border: 1px solid transparent;
+}
+
+/*
+ * An empty day must still read as a cell. A surface token cannot do that job:
+ * `bg-layer-3` equals the card behind it in the light theme, which erases the
+ * grid entirely. Tinting the label colour instead stays visible in both themes
+ * because it is defined to contrast with whatever surface is underneath.
+ */
+.cell[data-level='0'] {
+  background: color-mix(in srgb, var(--dsw-alias-label-primary) 9%, transparent);
+}
+
+.cell[data-level='1'] {
+  background: color-mix(in srgb, var(--dsw-alias-brand-primary) 24%, transparent);
+}
+
+.cell[data-level='2'] {
+  background: color-mix(in srgb, var(--dsw-alias-brand-primary) 45%, transparent);
+}
+
+.cell[data-level='3'] {
+  background: color-mix(in srgb, var(--dsw-alias-brand-primary) 70%, transparent);
+}
+
+.cell[data-level='4'] {
+  background: var(--dsw-alias-brand-primary);
+}
+
+.cell:focus-visible {
+  outline: 2px solid var(--dsw-alias-label-primary);
+  outline-offset: 1px;
+}
+
+.heatmapFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.legendCell {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+/* ---- models ----------------------------------------------------------- */
+
+.modelList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modelRow {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.modelHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.modelName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dsw-alias-label-primary);
+}
+
+.modelProvider {
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.modelTotal {
+  flex: none;
+  color: var(--dsw-alias-label-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.stack {
+  display: flex;
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--dsw-alias-bg-layer-3);
+}
+
+.stackPart {
+  height: 100%;
+  min-width: 0;
+}
+
+.stackPart[data-bucket='input'] {
+  background: var(--dsw-alias-brand-primary);
+}
+
+.stackPart[data-bucket='cacheRead'] {
+  background: color-mix(in srgb, var(--dsw-alias-brand-primary) 40%, transparent);
+}
+
+.stackPart[data-bucket='cacheWrite'] {
+  background: color-mix(in srgb, var(--dsw-alias-brand-primary) 65%, transparent);
+}
+
+.stackPart[data-bucket='output'] {
+  background: var(--dsw-alias-state-success-primary);
+}
+
+.bucketLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.bucketLegendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.bucketSwatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+/* ---- states ----------------------------------------------------------- */
+
+.skeletonGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.skeleton {
+  height: 62px;
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-layer-2);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.skeletonStrip {
+  height: 96px;
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-layer-2);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton,
+  .skeletonStrip {
+    animation: none;
+  }
+
+  .segment {
+    transition: none;
+  }
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 20px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  background: var(--dsw-alias-bg-layer-2);
+}
+
+.messageTitle {
+  color: var(--dsw-alias-label-primary);
+}
+
+.messageBody {
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.messageError .messageTitle {
+  color: var(--dsw-alias-label-error);
+}
+
+.retry {
+  appearance: none;
+  font: inherit;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  background: transparent;
+  color: var(--dsw-alias-label-primary);
+  cursor: pointer;
+}
+
+.retry:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.retry:focus-visible {
+  outline: 2px solid var(--dsw-alias-brand-primary);
+  outline-offset: 1px;
+}
+
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.progressTrack {
+  flex: 1;
+  min-width: 0;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--dsw-alias-bg-layer-3);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--dsw-alias-brand-primary);
+  transition: width 240ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progressFill {
+    transition: none;
+  }
+}
+
+/* ---- footer ----------------------------------------------------------- */
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--dsw-alias-border-l2);
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+  line-height: 18px;
+}
+
+.footerItem::after {
+  content: '·';
+  margin-left: 8px;
+  color: var(--dsw-alias-border-l3);
+}
+
+.footerItem:last-child::after {
+  content: '';
+  margin-left: 0;
+}
